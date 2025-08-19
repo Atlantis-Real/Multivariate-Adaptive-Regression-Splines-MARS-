@@ -1,0 +1,251 @@
+# MarsProject PACKAGE
+
+The MarsProject package is an implementation of Friedmans paper on MARS algorithm. This package extends the functionality of MARS and offers various features such as:
+
+-   Handle missing data, reducing the need for data processing.
+
+-   Performs automatic variable selection, identifying the most important predictors for the model.
+
+-   Interpretable models suitable for explaining the relationships between variables.
+
+------------------------------------------------------------------------
+
+## Usage
+
+```{r}
+
+##To use the `mars()` function, follow the syntax below:
+  
+mars(formula, data, control)
+
+## S3 method for class 'formula'
+mars(formula, data, control = mars.control(), ...) {
+  cc <- match.call() # save the call
+  mf <- model.frame(formula, data)
+  y <- model.response(mf)
+  mt <- attr(mf, "terms")
+  x <- model.matrix(mt, mf)[, -1, drop = FALSE]
+  x_names <- colnames(x)
+  control <- validate_mars.control(control) 
+  fwd <- fwd_stepwise(y, x, control)
+  bwd <- bwd_stepwise(fwd, control)
+  
+  fit <- lm(y, x) # (Fit a lm to all the terms from the forward/backward stepwise.)
+  out <- c(list(call = cc, formula = formula, y = y, B = bwd$B, Bfuncs = bwd$Bfuncs, x_names = x_names), fit)
+  
+  class(out) <- c("mars", class(fit))
+  out
+}
+
+
+```
+
+```{r}
+
+mars_result <- mars(y~., marstestdata ,testmc)
+
+print.mars(mars_result)
+
+summary.mars(mars_result)
+
+anova.mars(mars_result)
+
+predict.mars(mars_result)
+
+plot.mars(mars_result)
+
+```
+
+------------------------------------------------------------------------
+
+## Arguments
+
+Formula: The formula specifying the model to be fitted. It typically consists of a dependent variable and one or more independent variables.
+
+data: The data frame containing the variables specified in the formula.
+
+control: A list of control parameters used in the MARS modeling process, including Mmax, d, and trace.
+
+mc: An object of class "mars.control", containing control parameters for the MARS modeling process.
+
+x: The design matrix containing the independent variables extracted from the model frame.
+
+y: The response variable extracted from the model frame.
+
+N: The number of observations in the data.
+
+n: The number of predictors (columns) in the design matrix.
+
+Mmax: The maximum number of basis functions to be used in the MARS model.
+
+B: The basis matrix, a dataframe of size N by (Mmax + 1), where N is the number of observations and Mmax is the maximum number of basis functions.
+
+Bfuncs: A list containing information about the basis functions used in the model.
+
+m: Index representing the current basis function being considered.
+
+v: Index representing the predictor variable selected for splitting.
+
+t: Splitting point chosen for the selected predictor variable.
+
+lof_best: The best value of the loss function obtained during the forward stepwise selection process.
+
+split_best: Information about the best split found during the forward stepwise selection process, including the basis function index, predictor variable index, and splitting point.
+
+------------------------------------------------------------------------
+
+## Detailed Description
+
+#### Multivariate Adaptive Regression Splines (MARS)
+
+The MARS algorithm derived from Friedmans paper explains the regression prediction on a model that is based on several input variables. We fit multiple piecewise linear basis functions and partitioning the input into regions and fitting within each knot. mars() is used to deal with complex non linear relationships between predictor and response.
+
+#### mars()
+
+mars() function orchestrates the entire modeling process, from data preparation to model fitting and validation. It receives a formula and corresponding data, it prepares the dataset by extracting the response variable (y), model terms (mt), and constructing the model matrix (x).
+
+#### fwd_stepwise()
+
+Iteratively identify and construct basis functions for the MARS model. Each step involves selecting the optimal split point for predictor variables and evaluating the goodness of fit using a Loss of Fit (LOF) metric.
+
+#### bwd_stepwise()
+
+Iteratively removing unnecessary basis functions based on the GCV criterion calculated by LOF(). It updates the model by evaluating the fit and selecting the optimal subset of basis functions until convergence.
+
+#### Configuring, Validating, and Support
+
+The constructor (mars.control()), validator (validate_mars.control()), and helper functions play integral roles in configuring, validating, and assisting the Multivariate Adaptive Regression Splines (MARS) modeling process. mars.control() initializes control parameters, validate_mars.control() ensures their validity, and additional helpers (init_B(), LOF(), h(), split_points()) support various modeling tasks like basis matrix setup, performance evaluation, and variable selection, collectively enhancing MARS model adaptability and reliability.
+
+------------------------------------------------------------------------
+
+## Value
+
+Returned value of the mars() function encapsulates the result of fitting a Multivariate Adaptive Regression Splines (MARS) model to the provided data. It comprises a combination of input specifications, such as the formula used for modeling, the response variable, and the basis matrix constructed through forward and backward stepwise procedures. Additionally, it includes the fitted linear regression model obtained from the provided data. This comprehensive output facilitates model interpretation, evaluation, and further analysis.
+
+------------------------------------------------------------------------
+
+## Authors
+
+Ethan M. Chang and Luke W. Klossok, derived from mda::mars by Trevor Hastie and Robert Tibshirani, and from mda::earth by Stephen Milborrow.
+
+The approach used for GLMs was motivated by work done by Jane Elith and John Leathwick.
+
+------------------------------------------------------------------------
+
+## References
+
+Faraway (2005) Extending the Linear Model with R <https://www.maths.bath.ac.uk/~jjf23>
+
+Friedman (1991) Multivariate Adaptive Regression Splines (with discussion) Annals of Statistics 19/1, 1--141 <http://projecteuclid.org/euclid.aos/1176347963> <doi:10.1214/aos/1176347963>
+
+Friedman (1993) Fast MARS Stanford University Department of Statistics, Technical Report 110 <https://statistics.stanford.edu/research/fast-mars>
+
+Friedman and Silverman (1989) Flexible Parsimonious Smoothing and Additive Modeling Technometrics, Vol. 31, No. 1.
+
+Hastie, Tibshirani, and Friedman (2009) The Elements of Statistical Learning (2nd ed.) <https://hastie.su.domains/pub.htm>
+
+Leathwick, J.R., Rowe, D., Richardson, J., Elith, J., & Hastie, T. (2005) Using multivariate adaptive regression splines to predict the distributions of New Zealand's freshwater diadromous fish Freshwater Biology, 50, 2034-2052 <https://hastie.su.domains/pub.htm>
+
+Miller, Alan (1990, 2nd ed. 2002) Subset Selection in Regression <https://wp.csiro.au/alanmiller/index.html>
+
+Wikipedia article on MARS <https://en.wikipedia.org/wiki/Multivariate_adaptive_regression_splines>
+
+------------------------------------------------------------------------
+
+## See Also - methods
+
+For the "mars" class, typical methods include functions for model evaluation (e.g., summary statistics, plotting), prediction (e.g., making predictions on new data), extracting model components (e.g., coefficients, basis functions), and methods for model comparison or selection. These methods would enable users to interact with and analyze MARS models efficiently.
+
+We have implemented methods for model evaluation on basis functions:
+
+### summary.mars()
+
+The summary produces much of the model information; computation, residuals, and coefficients. This includes test statistics and p-values. In regards to MARS, it additionally shows the knot points of each basis function.
+
+### print.mars()
+
+print.mars() will provide the coefficient of basis functions to understand its structure, complexity, and performance on the data.
+
+### anova.mars()
+
+anova.mars() prints out a Analysis of Variance Table that gives us additional information for each basis function; Df, Sum sq, Mean sq, F-statistic, and p-value. Often used to determine test of significance in interpretation of the data.
+
+### predict.mars()
+
+predict.mars() gives values for the data used to fit the model. Essentially, generates predictions for new observations based on a trained MARS model. It allows researchers and analysts to apply the fitted MARS model to new data and make predictions, enabling them to assess relationships
+
+### plot.mars()
+
+plot.mars() provides a range of visualizations that can help in understanding, interpreting, and evaluating the MARS model and its predictions. Here we have implemented 2D and 3D plots for MARS.
+
+------------------------------------------------------------------------
+
+## Examples
+```{r}
+
+devtools::load_all() #set working directory to the MarsProject folder
+
+library("MarsProject")
+library("rgl")
+
+```
+
+```{r}
+
+load("TestFiles/testmars.RData") #validation dataset used throughout making the package!
+
+mars_result <- mars(y~., marstestdata ,testmc)
+
+print.mars(mars_result)
+
+summary.mars(mars_result)
+
+anova.mars(mars_result)
+
+predict.mars(mars_result)
+
+plot.mars(mars_result)
+
+```
+
+```{r}
+
+data(USArrests)
+
+control_b = mars.control(Mmax = 10)
+
+mars_usa <- mars(formula = UrbanPop ~ ., data = USArrests, control = control_b)
+
+print.mars(mars_usa)
+
+summary.mars(mars_usa)
+
+anova.mars(mars_usa)
+
+predict.mars(mars_usa)
+
+plot.mars(mars_usa)
+
+```
+
+```{r}
+
+data(iris)
+
+control_a = mars.control(Mmax = 10)
+
+mars_iris <- mars(formula = Sepal.Length ~ ., data = iris, control = control_a)
+
+print.mars(mars_iris)
+
+summary.mars(mars_iris)
+
+anova.mars(mars_iris)
+
+predict.mars(mars_iris)
+
+plot.mars(mars_iris)
+
+```
+
+------------------------------------------------------------------------
